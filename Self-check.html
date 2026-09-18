@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Basic English</title>
+<style>
+.flashcard-section{.flashcard-section{
+  padding:40px 0;
+  border-bottom:1px solid var(--line);
+}
+.flashcard-head{ margin-bottom:20px; }
+.flashcard-kicker{ font-size:0.85rem; color:var(--accent); margin-bottom:6px; }
+.flashcard-section h2{ font-family:var(--serif); font-size:1.5rem; margin:0 0 8px; }
+.flashcard-section > .flashcard-head p{ color:var(--muted); font-size:0.92rem; margin:0; }
+
+.flashcard-status{
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:0.85rem; color:var(--muted); margin:18px 0 10px;
+}
+.flashcard-progress{
+  height:5px; background:var(--paper-2); border:1px solid var(--line);
+  margin-bottom:24px; overflow:hidden;
+}
+.flashcard-progress #fc-progress-fill{
+  height:100%; background:var(--accent); width:0%; transition:width .2s ease;
+}
+
+.fc-card-stage{ perspective:1200px; margin:0 0 22px; min-height:260px; display:flex; align-items:center; }
+.fc-card{
+  width:100%; height:260px; position:relative;
+  transform-style:preserve-3d; transition:transform .45s cubic-bezier(.2,.8,.3,1);
+  cursor:pointer;
+}
+.fc-card.flipped{ transform:rotateY(180deg); }
+.fc-card-face{
+  position:absolute; inset:0; backface-visibility:hidden;
+  border:1px solid var(--line); background:#fff;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:28px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.04);
+}
+.fc-card-back{ transform:rotateY(180deg); background:var(--paper-2); }
+.fc-tag{
+  position:absolute; top:14px; left:16px;
+  font-size:0.75rem; color:var(--muted); letter-spacing:0.04em; text-transform:uppercase;
+}
+.fc-word{ font-family:var(--serif); font-size:1.9rem; }
+.fc-card-back .fc-word{ font-size:1.4rem; }
+.fc-example{ margin-top:14px; color:var(--muted); font-size:0.88rem; font-style:italic; max-width:38ch; }
+.fc-hint{ color:var(--muted); font-size:0.78rem; position:absolute; bottom:14px; }
+
+.fc-know-group{ display:flex; gap:8px; margin-bottom:10px; }
+.fc-know-group button{
+  flex:1; font-family:var(--sans); font-size:0.9rem; padding:10px 16px;
+  cursor:pointer; border:1px solid var(--line); background:#fff;
+}
+#fc-know-yes{ border-color:var(--correct); color:var(--correct); }
+#fc-know-yes:hover{ background:var(--correct-bg); }
+#fc-know-no{ border-color:var(--incorrect); color:var(--incorrect); }
+#fc-know-no:hover{ background:#f5e3e1; }
+
+.fc-controls{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:14px; }
+.fc-controls button{
+  font-family:var(--sans); font-size:0.9rem; padding:10px 16px;
+  cursor:pointer; border:1px solid var(--line); background:#fff; color:var(--ink);
+}
+.fc-controls button:hover{ border-color:var(--accent); }
+#fc-flip-btn{ background:var(--accent); color:#fff; border-color:var(--accent); }
+#fc-flip-btn:hover{ background:#622e24; }
+.fc-controls button:disabled{ opacity:0.4; cursor:not-allowed; }
+
+.fc-toolbar{ display:flex; justify-content:space-between; gap:8px; }
+.fc-toolbar button{
+  font-size:0.82rem; padding:7px 12px; background:transparent;
+  border:1px solid var(--line); cursor:pointer;
+}
+.fc-toolbar button:hover{ border-color:var(--accent); }
+
+.fc-summary{ display:none; text-align:center; padding:40px 20px; }
+.fc-summary h2{ font-family:var(--serif); font-size:1.5rem; }
+.fc-summary #fc-score-text{ font-family:var(--serif); font-size:2.4rem; color:var(--accent); margin:10px 0; }
+.fc-summary button{
+  font-family:var(--sans); font-size:0.9rem; padding:9px 18px; margin:6px;
+  cursor:pointer; border:1px solid var(--accent); background:transparent; color:var(--accent);
+}
+.fc-summary button:hover{ background:var(--accent-soft); }
+}
+  :root{
+    --ink:#1b2430;
+    --paper:#f6f3ec;
+    --paper-2:#ece7d9;
+    --line:#d9d2bf;
+    --accent:#7a3b2e;
+    --accent-soft:#f0e0d8;
+    --correct:#2f6b3e;
+    --correct-bg:#e4f0e2;
+    --incorrect:#b23b3b;
+    --muted:#6b6456;
+    --serif: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --sans: "Segoe UI", -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;}
+  .wrap{max-width:820px;margin:0 auto;padding:0 24px;}
+
+  header.top{
+    position:sticky;top:0;z-index:20;
+    background:rgba(246,243,236,0.95);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);
+  }
+  .top-inner{max-width:820px;margin:0 auto;padding:14px 24px;}
+  .top-row1{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;}
+  .brand{font-family:var(--serif);font-size:1.1rem;}
+  .brand span{color:var(--accent);}
+  .progress{font-size:0.85rem;color:var(--muted);}
+  .progress strong{color:var(--accent);}
+  nav.subnav{
+    display:flex;gap:16px;overflow-x:auto;margin-top:10px;
+    padding-bottom:4px;
+  }
+  nav.subnav a{
+    font-size:0.85rem;text-decoration:none;color:var(--muted);
+    white-space:nowrap;border-bottom:2px solid transparent;padding-bottom:4px;
+  }
+  nav.subnav a:hover{color:var(--ink);border-color:var(--accent);}
+
+  .hero{padding:40px 0 30px;border-bottom:1px solid var(--line);}
+  .hero .kicker{font-size:0.85rem;color:var(--accent);margin-bottom:8px;}
+  .hero h1{font-family:var(--serif);font-size:2.2rem;margin:0 0 10px;}
+  .hero p{color:var(--muted);max-width:60ch;margin:0;}
+  .tags{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;}
+  .tag{
+    font-size:0.78rem;border:1px solid var(--line);padding:4px 10px;
+    color:var(--muted);
+  }
+
+  .note{
+    background:var(--paper-2);border:1px solid var(--line);
+    padding:14px 18px;margin:28px 0;font-size:0.88rem;color:var(--muted);
+  }
+
+  .activity{padding:40px 0;border-bottom:1px solid var(--line);}
+  .activity-head{display:flex;gap:14px;align-items:baseline;margin-bottom:16px;}
+  .a-num{font-family:var(--serif);color:var(--accent);font-size:1.3rem;}
+  .a-num.done{color:var(--correct);}
+  .activity h2{font-family:var(--serif);font-size:1.35rem;margin:0;}
+  .instructions{color:var(--muted);font-size:0.92rem;margin-bottom:18px;}
+
+  /* --- Kiểu 1: chọn đáp án bằng dropdown --- */
+  .mc-grid{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-bottom:18px;}
+  .mc-item{border:1px solid var(--line);padding:14px;background:#fff;}
+  .mc-item .label{font-weight:600;margin-bottom:8px;font-size:0.92rem;}
+  .mc-item select{
+    width:100%;padding:8px;border:1px solid var(--line);
+    font-family:var(--sans);font-size:0.9rem;background:var(--paper);
+  }
+  .mc-item.correct select{border-color:var(--correct);background:var(--correct-bg);}
+  .mc-item.incorrect select{border-color:var(--incorrect);}
+
+  /* --- Kiểu 2: chọn nhiều (checkbox) --- */
+  .checkbox-list{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+  .checkbox-list label{
+    display:flex;gap:10px;align-items:flex-start;
+    padding:8px 10px;border:1px solid var(--line);background:#fff;
+    font-size:0.92rem;cursor:pointer;
+  }
+  .checkbox-list label.correct{border-color:var(--correct);background:var(--correct-bg);}
+  .checkbox-list label.incorrect{border-color:var(--incorrect);}
+
+  /* --- Kiểu 3: điền từ vào chỗ trống --- */
+  .fill-text{font-size:1rem;margin-bottom:18px;}
+  .fill-text input{
+    border:none;border-bottom:2px solid var(--line);
+    background:transparent;font-family:var(--sans);font-size:0.95rem;
+    width:110px;padding:2px 4px;text-align:center;
+  }
+  .fill-text input.correct{border-color:var(--correct);color:var(--correct);}
+  .fill-text input.incorrect{border-color:var(--incorrect);}
+
+  /* --- Kiểu 4: sắp xếp thứ tự --- */
+  .order-list{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+  .order-row{
+    display:flex;justify-content:space-between;align-items:center;
+    border:1px solid var(--line);padding:10px 14px;background:#fff;
+  }
+  .order-row select{padding:4px;border:1px solid var(--line);}
+  .order-row.correct{border-color:var(--correct);background:var(--correct-bg);}
+  .order-row.incorrect{border-color:var(--incorrect);}
+
+  /* --- Kiểu 5: đúng / sai --- */
+  table.tf{width:100%;border-collapse:collapse;margin-bottom:18px;}
+  table.tf td, table.tf th{padding:10px;border-bottom:1px solid var(--line);text-align:left;font-size:0.9rem;}
+  table.tf select{padding:6px;border:1px solid var(--line);}
+  table.tf tr.correct select{border-color:var(--correct);}
+  table.tf tr.incorrect select{border-color:var(--incorrect);}
+
+  /* --- Kiểu 6: viết bài + đếm từ --- */
+  textarea.writing{
+    width:100%;min-height:160px;padding:14px;
+    border:1px solid var(--line);font-family:var(--sans);font-size:0.95rem;
+    resize:vertical;background:#fff;
+  }
+  .wordcount{font-size:0.85rem;color:var(--muted);margin-top:6px;}
+  .wordcount strong{color:var(--accent);}
+
+  .actions{display:flex;gap:12px;margin-top:6px;}
+  button.check, button.reset{
+    font-family:var(--sans);font-size:0.9rem;padding:9px 18px;
+    cursor:pointer;border:1px solid var(--accent);
+  }
+  button.check{background:var(--accent);color:#fff;}
+  button.check:hover{background:#622e24;}
+  button.reset{background:transparent;color:var(--accent);}
+  button.reset:hover{background:var(--accent-soft);}
+
+  footer{padding:32px 0;text-align:center;color:var(--muted);font-size:0.85rem;}
+
+  @media (max-width:640px){
+    .hero h1{font-size:1.7rem;}
+  }
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="top-row1">
+      <div class="brand"><span>[Self check]</span></div>
+      <div class="progress"><strong id="checked-count">0</strong> hoạt động đã chấm</div>
+    </div>
+    <nav class="subnav">
+      <a href="#flashcards">Flashcards</a>
+      <a href="#a1">Prepositions</a>
+      <a href="#a2">Reading 1 - True/False</a>
+      <a href="#a3">Preposition 2 - Điền từ</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section class="hero">
+    <div class="kicker">Bài tập tự luyện</div>
+    <h1>[Tiếng anh căn bản]</h1>
+    <div class="tags">
+      <span class="tag">Grammar</span>
+      <span class="tag">Reading</span>
+      <span class="tag">Listening</span>
+      <span class="tag">Writing</span>
+    </div>
+  </section>
+
+  <div class="note">
+    <strong>Chế độ tự chấm:</strong> bấm <strong>"Chấm điểm"</strong> sau mỗi hoạt động.
+    Chỉ đáp án đúng được tô xanh; đáp án sai hoặc chưa hoàn thành sẽ không được tô,
+    để bạn có thể sửa lại và thử lại. Không có đáp án mẫu hiển thị sẵn.
+  </div>
+
+  <!-- ============ HOẠT ĐỘNG 1: chọn đáp án (dropdown) ============ -->
+  <section class="activity" id="a1" data-activity>
+    <div class="activity-head"><span class="a-num">1</span><h2>[Prepositions - Giới từ]</h2></div>
+    <p class="instructions"><img src="prepositions.jpg"></p>
+
+    <div class="mc-grid">
+      <div class="mc-item" data-answer="option2">
+        <div class="label">[Câu 1: The meeting is scheduled _____ 9:30 AM tomorrow.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">on</option>
+          <option value="option2">at</option>
+          <option value="option3">in</option>
+        </select>
+      </div>
+      <div class="mc-item" data-answer="option1">
+        <div class="label">[Câu 2: We usually have lunch ______ the cafeteria ______ our lunch break.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">in - in</option>
+          <option value="option2">at - at</option>
+          <option value="option3">in - at</option>
+        </select>
+      </div>
+        <div class="mc-item" data-answer="option1">
+        <div class="label">[Câu 3: He prefers to travel ______ train ______ long distances.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">by - for</option>
+          <option value="option2">by - at</option>
+          <option value="option3">by - on</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option3">
+        <div class="label">[Câu 4: The package was delivered ______ our doorstep ______ the morning.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">to - at</option>
+          <option value="option2">in - at</option>
+          <option value="option3">to - in</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option2">
+        <div class="label">[Câu 5: They met ______ the cafe ______ a cup of coffee..]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">at - with</option>
+          <option value="option2">at - for</option>
+          <option value="option3">in - for</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option3">
+        <div class="label">[Câu 6: She stood at the podium and delivered her speech with confidence.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">in - with</option>
+          <option value="option2">at - for</option>
+          <option value="option3">at - with</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option3">
+        <div class="label">[Câu 6: She stood ______ the podium and delivered her speech ______ confidence.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">in - with</option>
+          <option value="option2">at - for</option>
+          <option value="option3">at - with</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option1">
+        <div class="label">[Câu 7: He found his lost keys ______ the bottom ______ his backpack.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">at - of</option>
+          <option value="option2">at - for</option>
+          <option value="option3">at - with</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option3">
+        <div class="label">[Câu 8: She stood ______ the podium and delivered her speech ______ confidence.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">in - with</option>
+          <option value="option2">at - for</option>
+          <option value="option3">at - with</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option2">
+        <div class="label">[Câu 9: We walked ______ the street ______ the heavy rain.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">along - in</option>
+          <option value="option2">along - through</option>
+          <option value="option3">through - with</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option3">
+        <div class="label">[Câu 10: The restaurant is located ______ the corner ______ the main street.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">in - on</option>
+          <option value="option2">at - of</option>
+          <option value="option3">on - of</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option3">
+        <div class="label">[Câu 11: She stood ______ the podium and delivered her speech ______ confidence.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">in - with</option>
+          <option value="option2">at - for</option>
+          <option value="option3">at - with</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option3">
+        <div class="label">[Câu 12: The photo was taken ______ my family ______ our vacation ______ the beach.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">by - of - on</option>
+          <option value="option2">by - in - in</option>
+          <option value="option3">by - during - on</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option2">
+        <div class="label">[Câu 13: He jumped ______ the river ______ the bridge and swam to the other side.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">into - for</option>
+          <option value="option2">into - from</option>
+          <option value="option3">in - to</option>
+        </select>
+    </div>
+        <div class="mc-item" data-answer="option1">
+        <div class="label">[Câu 14: She stood ______ the stage and performed ______ front of a large audience.]</div>
+        <select>
+          <option value="">Chọn/Option</option>
+          <option value="option1">on - in</option>
+          <option value="option2">in - at</option>
+          <option value="option3">at - on</option>
+        </select>
+    </div>
+    <div class="actions">
+      <button class="check" type="button">Chấm điểm</button>
+      <button class="reset" type="button">Làm lại</button>
+    </div>
+  </section>
+
+  <!-- ============ HOẠT ĐỘNG 2: chọn nhiều (checkbox) ============ -->
+  <section class="activity" id="a2" data-activity>
+    <div class="activity-head"><span class="a-num">2</span><h2>[Reading 1 - Chọn tất cả ý đúng]</h2></div>
+    <p class="instructions"><h3>Three popular inventions from the 1920s</h3>
+The 1920s was an exciting time for inventions. Some of the things invented around that time changed the lives of millions of people, and some of those inventions are still widely used today.
+
+<h3>The television</h3>
+
+The invention with the biggest impact was probably the television. It was invented by a Scottish man, John Logie Baird. The first televised pictures were sent over a short distance in 1924, and his invention was formally demonstrated at the Royal Institute two years later. The pictures on the screen were not clear, but the viewers could see that they were human faces, and they could see their eyes opening and closing. In 1928, images were sent from Britain to America, and later, to a ship 1,500 miles out to sea. In the same year, the first colour images were sent. The first ‘seeing-in sets’ were sold that same year. For £25 (£1000 in today’s money), people in their homes could watch moving images that were sent from a broadcasting station.
+
+<h3>The fridge</h3>
+
+Another invention that became popular in the 1920s was the home refrigerator. People used different ways to keep food cool and fresh long before the 1900s, but home fridges weren’t invented until 1913 in the USA. Home fridges became very popular in the USA in the 1920s. Sales of the popular ‘Frigidaire’ model increased from 5,000 in 1921 to 750,000 in 1926. British people were less interested in fridges than Americans. They thought that they were unnecessary because the weather in Britain was cooler. But fridges were heavily advertised, and their advantages were described in detail. Soon, more fridges were sold, and the price decreased.
+</p>
+
+    <div class="checkbox-list">
+      <label data-correct="false"><input type="checkbox"> 1. When television images were first transmitted, viewers didn’t know exactly what the image was.</label>
+      <label data-correct="true"><input type="checkbox"> 2. The television was demonstrated at the Royal Institute in 1926.</label>
+      <label data-correct="false"><input type="checkbox"> 3. Colour images were not possible until after the 1920s.</label>
+      <label data-correct="true"><input type="checkbox"> 4. Television images were first sent across the Atlantic Ocean in 1928.</label>
+      <label data-correct="true"><input type="checkbox"> 5. People could buy television sets in the 1920s.</label>
+      <label data-correct="false"><input type="checkbox"> 6. Home refrigerators were invented in the 1920s.</label>
+      <label data-correct="true"><input type="checkbox"> 7. Fridges became popular in the USA before they were popular in the UK.</label>
+    </div>
+
+    <div class="actions">
+      <button class="check" type="button">Chấm điểm</button>
+      <button class="reset" type="button">Làm lại</button>
+    </div>
+  </section>
+
+  <!-- ============ HOẠT ĐỘNG 3: điền từ vào chỗ trống ============ -->
+  <section class="activity" id="a3" data-activity>
+    <div class="activity-head"><span class="a-num">3</span><h2>[Preposition 2 — Điền từ đúng]</h2></div>
+
+    <p class="fill-text">
+      My family lives (1) <strong>1</strong>
+      <input type="text" data-answer="in">
+      a small house <strong>2</strong>
+      <input type="text" data-answer="in">the countryside.<strong>3</strong> <input type="text" data-answer="in">  the living room, there is a comfortable sofa  <strong>4</strong> <input type="text" data-answer="in">the middle of the room, and a small table is placed<strong>5</strong>  <input type="text" data-answer="in front of"> it.  </p>
+
+    <div class="actions">
+      <button class="check" type="button">Chấm điểm</button>
+      <button class="reset" type="button">Làm lại</button>
+    </div>
+  </section>
+
+  <!-- ============ HOẠT ĐỘNG 4: sắp xếp thứ tự ============ -->
+  <section class="activity" id="a4" data-activity>
+    <div class="activity-head"><span class="a-num">4</span><h2>[Tên hoạt động — ví dụ: Sắp xếp theo thứ tự]</h2></div>
+    <p class="instructions">[Hướng dẫn: chọn số thứ tự đúng cho mỗi mục]</p>
+
+    <div class="order-list">
+      <div class="order-row" data-answer="2">
+        <span>[Mục A]</span>
+        <select><option value="">–</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+      </div>
+      <div class="order-row" data-answer="1">
+        <span>[Mục B]</span>
+        <select><option value="">–</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+      </div>
+      <div class="order-row" data-answer="4">
+        <span>[Mục C]</span>
+        <select><option value="">–</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+      </div>
+      <div class="order-row" data-answer="3">
+        <span>[Mục D]</span>
+        <select><option value="">–</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="check" type="button">Chấm điểm</button>
+      <button class="reset" type="button">Làm lại</button>
+    </div>
+  </section>
+
+  <!-- ============ HOẠT ĐỘNG 5: đúng / sai ============ -->
+  <section class="activity" id="a5" data-activity>
+    <div class="activity-head"><span class="a-num">5</span><h2>[Tên hoạt động — ví dụ: Đúng hay Sai]</h2></div>
+    <p class="instructions">[Hướng dẫn: chọn Đúng hoặc Sai cho mỗi câu]</p>
+
+    <table class="tf">
+      <thead><tr><th>#</th><th>Câu</th><th>Trả lời</th></tr></thead>
+      <tbody>
+        <tr data-answer="true"><td>1</td><td>[Câu phát biểu 1]</td>
+          <td><select><option value="">–</option><option value="true">Đúng</option><option value="false">Sai</option></select></td></tr>
+        <tr data-answer="false"><td>2</td><td>[Câu phát biểu 2]</td>
+          <td><select><option value="">–</option><option value="true">Đúng</option><option value="false">Sai</option></select></td></tr>
+        <tr data-answer="true"><td>3</td><td>[Câu phát biểu 3]</td>
+          <td><select><option value="">–</option><option value="true">Đúng</option><option value="false">Sai</option></select></td></tr>
+      </tbody>
+    </table>
+
+    <div class="actions">
+      <button class="check" type="button">Chấm điểm</button>
+      <button class="reset" type="button">Làm lại</button>
+    </div>
+  </section>
+
+  <!-- ============ HOẠT ĐỘNG 6: viết bài + đếm từ ============ -->
+  <section class="activity" id="a6">
+    <div class="activity-head"><span class="a-num">6</span><h2>[Tên hoạt động — ví dụ: Viết đoạn văn]</h2></div>
+    <p class="instructions">[Hướng dẫn: viết một đoạn văn khoảng 100–150 từ về chủ đề ...]</p>
+    <textarea class="writing" id="writing-box" placeholder="Viết bài của bạn ở đây…"></textarea>
+    <div class="wordcount"><strong id="word-num">0</strong> / 100–150 từ</div>
+  </section>
+
+<section id="flashcards" class="flashcard-section">
+
+  <div class="flashcard-head">
+    <div class="flashcard-kicker">Flashcard ôn tập</div>
+
+    <h2>[Tên bộ từ vựng]</h2>
+
+    <p>
+      Bấm vào thẻ để xem nghĩa, sau đó đánh giá bạn có nhớ
+      từ đó không.
+    </p>
+  </div>
+
+  <div class="flashcard-status">
+    <span id="fc-status-text">Đang tải từ vựng…</span>
+    <span id="fc-counter">0 / 0</span>
+  </div>
+
+  <div class="flashcard-progress">
+    <div id="fc-progress-fill"></div>
+  </div>
+
+  <div id="fc-study-area">
+
+    <div class="fc-card-stage">
+      <div class="fc-card" id="fc-card">
+
+        <div class="fc-card-face fc-card-front">
+          <span class="fc-tag">Từ vựng</span>
+
+          <div class="fc-word" id="fc-front-word">…</div>
+
+          <div class="fc-hint">
+            Bấm vào thẻ để xem nghĩa
+          </div>
+        </div>
+
+        <div class="fc-card-face fc-card-back">
+          <span class="fc-tag">Nghĩa</span>
+
+          <div class="fc-word" id="fc-back-word">…</div>
+
+          <div class="fc-example" id="fc-back-example"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="fc-know-group">
+      <button id="fc-know-no">
+        ✕ Chưa nhớ
+      </button>
+
+      <button id="fc-know-yes">
+        ✓ Đã nhớ
+      </button>
+    </div>
+
+    <div class="fc-controls">
+      <button id="fc-prev-btn">‹ Trước</button>
+      <button id="fc-next-btn">Sau ›</button>
+      <button id="fc-flip-btn">Lật thẻ</button>
+    </div>
+
+    <div class="fc-toolbar">
+      <button id="fc-shuffle-btn">
+        🔀 Xáo trộn
+      </button>
+
+      <button id="fc-restart-btn">
+        ↺ Bắt đầu lại
+      </button>
+    </div>
+
+  </div>
+
+  <div class="fc-summary" id="fc-summary">
+
+    <h2>Hoàn thành bộ từ vựng!</h2>
+
+    <div id="fc-score-text">0 / 0</div>
+
+    <p>Từ bạn đánh dấu là đã nhớ</p>
+
+    <button id="fc-review-again-btn">
+      Ôn lại từ chưa nhớ
+    </button>
+
+    <button id="fc-restart-all-btn">
+      Bắt đầu lại toàn bộ
+    </button>
+
+  </div>
+
+</section>
+
+
+</main>
+
+<footer class="wrap">
+  [Mã môn] · [Tên môn học] · [Tên bài học]<br>
+  Phiên bản tự luyện dành cho sinh viên
+</footer>
+<script>
+
+ 
+
+
+  // =========================
+// JAVASCRIPT FLASHCARD
+// =========================
+
+// 1. Dữ liệu từ vựng — THÊM TỪ MỚI Ở ĐÂY, mỗi từ là 1 dòng { }
+const SAMPLE_DATA = [
+  { word: "river", meaning: "Dòng sông", example: "The children are playing near the river." },
+  { word: "receive", meaning: "Nhận", example: "I received a letter from my friend."},
+  { word: "sign", meaning: "Dấu hiệu; biển báo; ký tên", example: "Please sign your name here."},
+  { word: "sing", meaning: "Hát", example: "She likes to sing English songs."},
+  { word: "borrow", meaning: "Mượn", example: "Can I borrow your pen?"},
+  { word: "culture", meaning: "Văn hóa", example: "I want to learn about Vietnamese culture."},
+  { word: "light", meaning: "Ánh sáng; nhẹ", example: "Please turn on the light."},
+  { word: "hard", meaning: "Khó; chăm chỉ; cứng", example: "This exercise is very hard."},
+  { word: "find", meaning: "Tìm thấy; tìm kiếm", example: "I can't find my keys."},
+  { word: "tired", meaning: "Mệt mỏi", example: "I feel tired after school."},
+  { word: "buy", meaning: "Mua", example: "I want to buy a new book."},
+  { word: "bring", meaning: "Mang đến", example: "Please bring your book to class."},
+  { word: "choose", meaning: "Chọn, lựa chọn", example: "You can choose any color you like."},
+   // Thêm từ mới bằng cách copy 1 dòng trên, dán xuống dưới, đổi nội dung, nhớ có dấu phẩy "," ở cuối dòng trước
+];
+
+let cards = [];
+let currentIndex = 0;
+let knownCount = 0;
+let unknownWords = [];
+
+function shuffle(array){
+  for(let i = array.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+function renderCard(){
+  const cardEl = document.getElementById("fc-card");
+  cardEl.classList.remove("flipped");
+  const item = cards[currentIndex];
+  document.getElementById("fc-front-word").textContent = item.word;
+  document.getElementById("fc-back-word").textContent = item.meaning;
+  document.getElementById("fc-back-example").textContent = item.example || "";
+  document.getElementById("fc-counter").textContent = `${currentIndex + 1} / ${cards.length}`;
+}
+
+function goToNextOrFinish(){
+  if(currentIndex < cards.length - 1){
+    currentIndex++;
+    renderCard();
+  } else {
+    showSummary();
+  }
+}
+
+function showSummary(){
+  document.getElementById("fc-study-area").style.display = "none";
+  document.getElementById("fc-summary").style.display = "block";
+  document.getElementById("fc-score-text").textContent = `${knownCount} / ${cards.length}`;
+}
+
+function startSession(deck){
+  cards = deck;
+  currentIndex = 0;
+  knownCount = 0;
+  unknownWords = [];
+  document.getElementById("fc-study-area").style.display = "block";
+  document.getElementById("fc-summary").style.display = "none";
+  renderCard();
+}
+
+document.getElementById("fc-card").addEventListener("click", function(){
+  this.classList.toggle("flipped");
+});
+document.getElementById("fc-flip-btn").addEventListener("click", function(){
+  document.getElementById("fc-card").classList.toggle("flipped");
+});
+document.getElementById("fc-prev-btn").addEventListener("click", function(){
+  if(currentIndex > 0){ currentIndex--; renderCard(); }
+});
+document.getElementById("fc-next-btn").addEventListener("click", function(){
+  if(currentIndex < cards.length - 1){ currentIndex++; renderCard(); }
+});
+document.getElementById("fc-know-yes").addEventListener("click", function(){
+  knownCount++;
+  goToNextOrFinish();
+});
+document.getElementById("fc-know-no").addEventListener("click", function(){
+  unknownWords.push(cards[currentIndex]);
+  goToNextOrFinish();
+});
+document.getElementById("fc-shuffle-btn").addEventListener("click", function(){
+  startSession(shuffle(cards.slice()));
+});
+document.getElementById("fc-restart-btn").addEventListener("click", function(){
+  startSession(cards.slice());
+});
+document.getElementById("fc-review-again-btn").addEventListener("click", function(){
+  if(unknownWords.length === 0){ alert("Bạn đã nhớ hết tất cả các từ rồi!"); return; }
+  startSession(shuffle(unknownWords.slice()));
+});
+document.getElementById("fc-restart-all-btn").addEventListener("click", function(){
+  startSession(shuffle(SAMPLE_DATA.slice()));
+});
+
+// ⚠️ Dòng này BẮT BUỘC phải có — nếu thiếu, thẻ sẽ không hiện gì cả
+startSession(shuffle(SAMPLE_DATA.slice()));
+
+</script>
+<script>
+
+  var totalChecked = 0;
+  var checkedActivities = new Set();
+
+  function updateProgress(activityId){
+    checkedActivities.add(activityId);
+    document.getElementById('checked-count').textContent = checkedActivities.size;
+  }
+
+  document.querySelectorAll('[data-activity]').forEach(function(section){
+    var checkBtn = section.querySelector('.check');
+    var resetBtn = section.querySelector('.reset');
+    var numEl = section.querySelector('.a-num');
+
+    checkBtn.addEventListener('click', function(){
+      // Kiểu 1: dropdown chọn đáp án
+      section.querySelectorAll('.mc-item').forEach(function(item){
+        var select = item.querySelector('select');
+        var correct = select.value !== '' && select.value === item.dataset.answer;
+        item.classList.toggle('correct', correct);
+        item.classList.toggle('incorrect', select.value !== '' && !correct);
+      });
+
+      // Kiểu 2: checkbox
+      section.querySelectorAll('.checkbox-list label').forEach(function(label){
+        var checkbox = label.querySelector('input');
+        var shouldBeChecked = label.dataset.correct === 'true';
+        var isRight = checkbox.checked === shouldBeChecked && shouldBeChecked;
+        label.classList.toggle('correct', isRight);
+        label.classList.toggle('incorrect', checkbox.checked && !shouldBeChecked);
+      });
+
+      // Kiểu 3: điền từ
+      section.querySelectorAll('.fill-text input[type="text"]').forEach(function(input){
+        var val = input.value.trim().toLowerCase();
+        var ans = (input.dataset.answer || '').trim().toLowerCase();
+        var correct = val !== '' && val === ans;
+        input.classList.toggle('correct', correct);
+        input.classList.toggle('incorrect', val !== '' && !correct);
+      });
+
+      // Kiểu 4: sắp xếp thứ tự
+      section.querySelectorAll('.order-row').forEach(function(row){
+        var select = row.querySelector('select');
+        var correct = select.value !== '' && select.value === row.dataset.answer;
+        row.classList.toggle('correct', correct);
+        row.classList.toggle('incorrect', select.value !== '' && !correct);
+      });
+
+      // Kiểu 5: đúng/sai
+      section.querySelectorAll('table.tf tbody tr').forEach(function(row){
+        var select = row.querySelector('select');
+        var correct = select.value !== '' && select.value === row.dataset.answer;
+        row.classList.toggle('correct', correct);
+        row.classList.toggle('incorrect', select.value !== '' && !correct);
+      });
+
+      numEl.classList.add('done');
+      updateProgress(section.id);
+    });
+
+    resetBtn.addEventListener('click', function(){
+      section.querySelectorAll('select').forEach(function(s){ s.value=''; });
+      section.querySelectorAll('input[type="text"]').forEach(function(i){ i.value=''; i.classList.remove('correct','incorrect'); });
+      section.querySelectorAll('input[type="checkbox"]').forEach(function(c){ c.checked=false; });
+      section.querySelectorAll('.mc-item, .order-row').forEach(function(el){ el.classList.remove('correct','incorrect'); });
+      section.querySelectorAll('.checkbox-list label').forEach(function(el){ el.classList.remove('correct','incorrect'); });
+      section.querySelectorAll('table.tf tbody tr').forEach(function(el){ el.classList.remove('correct','incorrect'); });
+      numEl.classList.remove('done');
+      checkedActivities.delete(section.id);
+      document.getElementById('checked-count').textContent = checkedActivities.size;
+    });
+  });
+
+  // Đếm số từ trong ô viết bài
+  var writingBox = document.getElementById('writing-box');
+  var wordNum = document.getElementById('word-num');
+  writingBox.addEventListener('input', function(){
+    var text = writingBox.value.trim();
+    var count = text === '' ? 0 : text.split(/\s+/).length;
+    wordNum.textContent = count;
+  });
+</script>
+
+</body>
+</html>
